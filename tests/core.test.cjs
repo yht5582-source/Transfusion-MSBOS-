@@ -1,5 +1,5 @@
 const {test}=require('node:test');const a=require('node:assert/strict');const C=require('../src/core.js');
-const row=(t=0,x={})=>({t,rbc:0,ffp:0,plt:0,cryst:0,colloid:0,loss:0,fibG:0,...x});
+const row=(t=0,x={})=>({...C.blank(t),...x});
 const cfg={weight:70,context:'nba',active:true,major:false,shock:false,tbi:false,complex:false,stale:30};
 test('blank is unknown, zero is retained',()=>{a.equal(C.numeric(''),null);a.equal(C.numeric('0'),0);a.equal(C.numeric('NaN'),null)});
 test('empty cannot imply safety',()=>a.match(C.assess([],cfg).summary,/不足/));
@@ -16,9 +16,9 @@ test('physiology critical boundaries',()=>{const r=C.assess([row(0,{ca:.8,ph:7.1
 test('normal labs still never declare safe',()=>a.match(C.assess([row(0,{platelet:200,fibrinogen:3,inr:1,aptt:30,apttNormal:35,ca:1.2,ph:7.4,temp:37})],cfg).summary,/不能排除/));
 test('no lab no numeric prediction',()=>a.equal(C.simulate([],cfg,row(30),'platelet').range,null));
 test('no exposure leaves lab unchanged',()=>{const r=C.simulate([row(0,{platelet:100})],cfg,row(0),'platelet',0);a.deepEqual(r.range,[100,100]);});
-test('dilution decreases concentration',()=>{const r=C.simulate([row(0,{platelet:100})],cfg,row(30,{rbc:4,loss:1000,cryst:1000}),'platelet',0);a.ok(r.range[1]<100);a.ok(r.range[0]<=r.range[1]);});
+test('dilution decreases concentration',()=>{const r=C.simulate([row(0,{platelet:100})],cfg,row(30,{rbc:4,rbcMl:600,loss:1000,cryst:1000}),'platelet',0);a.ok(r.range[1]<100);a.ok(r.range[0]<=r.range[1]);});
 test('fresh measurement reanchors and avoids double counting',()=>{const rows=[row(0,{platelet:100}),row(20,{rbc:4,platelet:60})];a.deepEqual(C.simulate(rows,cfg,row(0),'platelet',0).range,[60,60]);});
-test('support is scenario not promised increment',()=>{const base=[row(0,{platelet:100,fibrinogen:1})];a.ok(C.simulate(base,cfg,row(30,{plt:1}),'platelet',0).range[1]>100);a.ok(C.simulate(base,cfg,row(30,{fibG:3}),'fibrinogen',0).range[1]>1);});
+test('support is scenario not promised increment',()=>{const base=[row(0,{platelet:100,fibrinogen:1})];a.ok(C.simulate(base,cfg,row(30,{plt:1,pltMl:250}),'platelet',0).range[1]>100);a.ok(C.simulate(base,cfg,row(30,{fibG:3}),'fibrinogen',0).range[1]>1);});
 test('model suppresses complex, extreme loss, old anchor',()=>{const r=[row(0,{platelet:100})];a.equal(C.simulate(r,{...cfg,complex:true},row(10),'platelet').range,null);a.equal(C.simulate(r,cfg,row(10,{loss:5000}),'platelet').range,null);a.equal(C.simulate([row(0,{platelet:100}),row(121)],cfg,row(0),'platelet').range,null);});
 test('no PT or calcium prediction',()=>a.equal(C.simulate([row(0,{inr:1})],cfg,row(20),'inr').range,null));
 test('quality ratios never divide by zero',()=>{a.equal(C.quality(0,0,0,0).ct,null);a.throws(()=>C.quality(10,11,1,1));a.equal(C.quality(10,2,8,4).ct,2)});
@@ -30,3 +30,11 @@ test('negative future and implausible volume suppress numbers',()=>{const base=[
 test('future horizon and consumption validated',()=>{const base=[row(0,{platelet:100})];a.equal(C.simulate(base,cfg,row(61),'platelet').range,null);a.equal(C.simulate(base,cfg,row(20),'platelet',null).range,null)});
 test('missing platelet independent of fibrinogen measurement',()=>a.equal(C.simulate([row(0,{fibrinogen:2})],cfg,row(0),'platelet').range,null));
 test('measurement at t0 baseline exposure is not counted twice',()=>a.deepEqual(C.simulate([row(0,{rbc:10,platelet:80})],cfg,row(0),'platelet',0).range,[80,80]));
+
+test('Taiwan RBC units cannot imply overseas bag volume',()=>a.equal(C.simulate([row(0,{platelet:100})],cfg,row(20,{rbc:2}),'platelet').range,null));
+test('Taiwan RBC actual volume drives dilution',()=>{const b=[row(0,{platelet:100})];const r=C.simulate(b,cfg,row(20,{rbc:2,rbcMl:300}),'platelet',0);a.ok(r.range[1]<100);a.ok(r.range[1]>90)});
+test('PH count and actual mL required separately',()=>a.equal(C.simulate([row(0,{platelet:100})],cfg,row(20,{plt:1}),'platelet').range,null));
+test('traditional PC never treated as one PH bag',()=>a.equal(C.simulate([row(0,{platelet:100})],cfg,row(20,{pc:12,pltMl:400}),'platelet').range,null));
+test('CRYO units cannot invent fibrinogen content',()=>a.equal(C.simulate([row(0,{fibrinogen:1})],cfg,row(20,{cryoU:12,cryoMl:150}),'fibrinogen').range,null));
+test('CRYO g and mL can be reviewed explicitly',()=>a.ok(C.simulate([row(0,{fibrinogen:1})],cfg,row(20,{cryoU:12,cryoMl:150,fibG:1.5}),'fibrinogen',0).range[1]>1));
+test('Taiwan repeat trigger is configurable, not NBA 4U conversion',()=>{const b=[row(0,{fibrinogen:3}),row(20,{rbc:4})];a.ok(!C.assess(b,{...cfg,repeatTwU:8}).alerts.some(x=>x.code==='rbc-fibrinogen'));a.ok(C.assess(b,{...cfg,repeatTwU:4}).alerts.some(x=>x.code==='rbc-fibrinogen'))});
