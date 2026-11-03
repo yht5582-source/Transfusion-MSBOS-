@@ -1,4 +1,4 @@
-# 輸血與術前備血決策輔助 v2.3.1
+# 輸血與術前備血決策輔助 v2.4
 
 繁體中文、無外部依賴、可離線單頁成人教育／研究工具。**臨床決策輔助，不能取代醫師判斷；未經臨床驗證，不得當作醫療器材或自動醫囑。**
 
@@ -57,6 +57,10 @@ node --test tests/*.cjs
 - [HTAA 第二版 2025](https://portal.appshtaa.moh.gov.my/images/ProfilJabatan/Transfusi/Penerbitan/MSBOS_HTAA.pdf)
 
 兩者都是機構備血作業參考，不是全球通用指引。GSH 對照血型／抗體篩檢；No Sample 不表示永不需輸血。HTAA pint/pints/units 及 JHU U 皆保留原文，不代表台灣標準袋量；HTAA 頁碼為文件印刷頁碼，非 PDF 閱讀器頁序。
+
+## v2.4 教學分頁（2026-11-03）
+
+新增示範病例 8 例、考題 20 題（基礎 10、高階 10，答案 A–D 各 5，作答不儲存）與心智圖（#cases、#quiz、#map），資料在 `src/teach.js`。病例可帶入工具，`tests/teach.test.cjs` 以工具實際輸出核對病例與部分考題；內容僅取自本專案已查核的來源。
 
 ## v2.3 比對與建議（2026-11-03）
 

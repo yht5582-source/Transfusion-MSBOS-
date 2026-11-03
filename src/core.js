@@ -6,6 +6,7 @@ const labs={hb:['Hb','g/dL',0,30],platelet:['Platelet','×10⁹/L',0,2000],fibri
 const exposureNames={rbc:'RBC',rbcMl:'RBC 實際 mL',ffp:'FFP',plt:'分離術血小板',pc:'傳統血小板',pltMl:'血小板實際 mL',cryoU:'CRYO',cryoMl:'CRYO 實際 mL',cryst:'晶體液',colloid:'膠體液',loss:'失血',fibG:'補充 fibrinogen'};
 // Context reference values; TBI / spontaneous ICH 100 is stated by both European trauma R30 and Anaesthetists 2025.
 const cuts=c=>({fibrinogen:c.context==='nba'||c.context==='obstetric'?2:1.5,platelet:c.tbi?100:c.context==='obstetric'?75:50,inr:1.5,ca:c.context==='trauma'?1.1:1,ph:7.2,be:-6,lactate:4,temp:35});
+const rbcCuts={general:7,cardiac:7.5,cvd:8,ami:10};
 const numeric=v=>v===null||v===undefined||String(v).trim()===''?null:(Number.isFinite(Number(v))?Number(v):null);
 function validate(rows){let prev=null;for(const r of rows){if(!Number.isFinite(r.t)||r.t<0||r.t>10080)throw Error('時間須為 0–10080 分鐘');if(prev&&r.t<=prev.t)throw Error('時間須嚴格遞增；同次抽血請編輯原列');for(const k of exposure){if(!Number.isFinite(r[k])||r[k]<0)throw Error(exposureNames[k]+' 累積量須為非負數');if(prev&&r[k]<prev[k])throw Error(`${exposureNames[k]} 累積量不得少於 ${prev.t} min 的 ${prev[k]}；請填累積量，不是本次增量`);}for(const [k,v]of Object.entries(labs))if(r[k]!=null&&(!Number.isFinite(r[k])||r[k]<v[2]||r[k]>v[3]))throw Error(v[0]+' 超出輸入範圍');prev=r;}return true;}
 function latest(rows,k){for(let i=rows.length-1;i>=0;i--)if(rows[i][k]!=null)return{value:rows[i][k],t:rows[i].t,row:rows[i],index:i};return null;}
@@ -50,5 +51,5 @@ const toTaiwanU=overseas=>Number.isFinite(overseas)?overseas*2:null;
 const schedSources=['h','u','t','n','w','j','a','b'];
 const schedLevel=v=>Array.isArray(v)?(v[0]+v[1])/2:typeof v==='number'?v:v==='TS'||v==='-'?0:null;
 function schedRec(row){const vals=schedSources.map(k=>schedLevel(row[k])).filter(v=>v!==null).sort((x,y)=>x-y),n=vals.length;if(n<3)return{kind:'few',n};const median=n%2?vals[(n-1)/2]:(vals[n/2-1]+vals[n/2])/2,spread=vals[n-1]-vals[0];return median===0?{kind:'ts',n,median,spread}:{kind:'cm',units:toTaiwanU(Math.ceil(median)),n,median,spread};}
-return{numeric,validate,latest,assess,simulate,quality,cuts,toTaiwanU,schedRec,schedSources,exposure,labs,blank};})();
+return{numeric,validate,latest,assess,simulate,quality,cuts,rbcCuts,toTaiwanU,schedRec,schedSources,exposure,labs,blank};})();
 if(typeof module!=='undefined')module.exports=Coag;
