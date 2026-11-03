@@ -7,4 +7,4 @@ The NBA-based clinical threshold summary is adapted from the National Blood Auth
 https://www.blood.gov.au/patient-blood-management-guideline-adults-critical-bleeding
 https://creativecommons.org/licenses/by-nc-sa/4.0/
 
-No guideline publisher has validated or endorsed this application. No original source logos, figures or tables are copied.
+No guideline publisher has validated or endorsed this application. No original source logos or figures are copied. The procedure tables restate factual RBC order values from the cited documents with independently written procedure names; the source documents remain with their owners and are linked rather than reproduced.

@@ -21,7 +21,9 @@ test('fresh measurement reanchors and avoids double counting',()=>{const rows=[r
 test('support is scenario not promised increment',()=>{const base=[row(0,{platelet:100,fibrinogen:1})];a.ok(C.simulate(base,cfg,row(30,{plt:1,pltMl:250}),'platelet',0).range[1]>100);a.ok(C.simulate(base,cfg,row(30,{fibG:3}),'fibrinogen',0).range[1]>1);});
 test('model suppresses complex, extreme loss, old anchor',()=>{const r=[row(0,{platelet:100})];a.equal(C.simulate(r,{...cfg,complex:true},row(10),'platelet').range,null);a.equal(C.simulate(r,cfg,row(10,{loss:5000}),'platelet').range,null);a.equal(C.simulate([row(0,{platelet:100}),row(121)],cfg,row(0),'platelet').range,null);});
 test('no PT or calcium prediction',()=>a.equal(C.simulate([row(0,{inr:1})],cfg,row(20),'inr').range,null));
-test('quality ratios never divide by zero',()=>{a.equal(C.quality(0,0,0,0).ct,null);a.throws(()=>C.quality(10,11,1,1));a.equal(C.quality(10,2,8,4).ct,2)});
+test('quality ratios never divide by zero',()=>{a.equal(C.quality(0,0,0,0,0).ct,null);a.equal(C.quality(0,0,0,0,0).ti,null);a.throws(()=>C.quality(10,5,6,8,8));a.equal(C.quality(10,5,2,8,4).ct,2)});
+test('TP and TI use crossmatched patients, not all surgeries',()=>{const q=C.quality(100,20,8,40,16);a.equal(q.tp,40);a.equal(q.ti,.8);a.equal(q.rate,8);a.equal(q.util,40);a.ok(Math.abs(q.msbos-1.2)<1e-9);});
+test('quality rejects inconsistent counts',()=>{for(const x of [[5,6,1,6,1],[10,5,2,8,9],[10,5,3,8,2],[10,0,0,3,0],[10,5,0,8,1],[10,5,1,4,1],[10.5,5,1,8,1]])a.throws(()=>C.quality(...x));});
 test('ongoing bleed and adverse physiology prompts MTP review',()=>a.ok(C.assess([row(0,{ph:7.1})],cfg).alerts.some(x=>x.code==='escalate')));
 test('severe hypocalcemia urgent even without bleed checkbox',()=>a.equal(C.assess([row(0,{ca:.8})],{...cfg,active:false}).urgent,true));
 test('FFP is included in fibrinogen scenario',()=>a.ok(C.simulate([row(0,{fibrinogen:1})],cfg,row(20,{ffp:400}),'fibrinogen',0).range[1]>1));
@@ -38,3 +40,11 @@ test('traditional PC never treated as one PH bag',()=>a.equal(C.simulate([row(0,
 test('CRYO units cannot invent fibrinogen content',()=>a.equal(C.simulate([row(0,{fibrinogen:1})],cfg,row(20,{cryoU:12,cryoMl:150}),'fibrinogen').range,null));
 test('CRYO g and mL can be reviewed explicitly',()=>a.ok(C.simulate([row(0,{fibrinogen:1})],cfg,row(20,{cryoU:12,cryoMl:150,fibG:1.5}),'fibrinogen',0).range[1]>1));
 test('Taiwan repeat trigger is configurable, not NBA 4U conversion',()=>{const b=[row(0,{fibrinogen:3}),row(20,{rbc:4})];a.ok(!C.assess(b,{...cfg,repeatTwU:8}).alerts.some(x=>x.code==='rbc-fibrinogen'));a.ok(C.assess(b,{...cfg,repeatTwU:4}).alerts.some(x=>x.code==='rbc-fibrinogen'))});
+test('TBI 100 applies outside the trauma context too',()=>{for(const context of ['nba','peri','obstetric','trauma'])a.ok(C.assess([row(0,{platelet:80})],{...cfg,context,tbi:true}).alerts.some(x=>x.code==='plt'),context);a.ok(!C.assess([row(0,{platelet:80})],{...cfg,context:'nba'}).alerts.some(x=>x.code==='plt'));});
+test('reference values per context',()=>{a.deepEqual(C.cuts({context:'trauma',tbi:true}),{fibrinogen:1.5,platelet:100,inr:1.5,ca:1.1,ph:7.2,temp:35});a.equal(C.cuts({context:'obstetric'}).platelet,75);a.equal(C.cuts({context:'obstetric'}).fibrinogen,2);a.equal(C.cuts({context:'peri'}).ca,1);});
+test('earlier TEG/ROTEM record is not lost when the last row has none',()=>{const al=C.assess([row(0,{vem:'FIBTEM A5 5 mm'}),row(20)],cfg).alerts.find(x=>x.code==='vem');a.match(al.text,/0 min/);a.ok(!C.assess([row(0,{vem:'  '})],cfg).alerts.some(x=>x.code==='vem'));});
+test('urgent alerts sort first',()=>{const r=C.assess([row(0,{ca:.8})],{...cfg,active:false}).alerts;a.equal(r[0].code,'severe-ca');const i=r.findIndex(x=>x.level!=='urgent');a.ok(r.slice(i).every(x=>x.level!=='urgent'));});
+test('physiology alerts state value and sampling time',()=>a.match(C.assess([row(5,{ph:7.1})],cfg).alerts.find(x=>x.code==='ph').text,/pH 7\.1（5 min/));
+test('invalid staleness skips reminders instead of flagging everything',()=>a.ok(!C.assess([row(0,{inr:1})],{...cfg,stale:null}).alerts.some(x=>x.code.startsWith('stale'))));
+test('validation messages use readable names',()=>{a.throws(()=>C.validate([row(0,{fibG:2}),row(5,{fibG:1})]),/補充 fibrinogen 累積量不得少於 0 min/);a.throws(()=>C.validate([row(0,{ffp:-1})]),/FFP/);});
+test('obstetric context suppresses numeric scenario',()=>a.equal(C.simulate([row(0,{platelet:100})],{...cfg,context:'obstetric'},row(10),'platelet').range,null));

@@ -2,7 +2,7 @@
 const MSBOS=(()=>{
 const sources={
  JHU:{name:'Johns Hopkins 成人',version:'2025-04-08',checked:'2026-11-03',url:'https://anesthesiology.hopkinsmedicine.org/wp-content/uploads/2025/04/Blood-Order-Schedule-Adult-4-10-25.pdf'},
- HTAA:{name:'HTAA（馬來西亞）',version:'第二版 2025',checked:'2026-11-03',url:'https://portal.appshtaa.moh.gov.my/images/ProfilJabatan/Transfusi/MSBOS_HTAA.pdf'}
+ HTAA:{name:'HTAA（馬來西亞）',version:'第二版 2025',checked:'2026-11-03',url:'https://portal.appshtaa.moh.gov.my/images/ProfilJabatan/Transfusi/Penerbitan/MSBOS_HTAA.pdf'}
 };
 // Format: source, specialty, translated operation, raw recommendation, source section/page, search aliases.
 const data=[
