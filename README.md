@@ -1,4 +1,4 @@
-# 輸血與術前備血決策輔助 v2.0
+# 輸血與術前備血決策輔助 v2.1
 
 繁體中文、無外部依賴、可離線單頁成人教育／研究工具。**臨床決策輔助，不能取代醫師判斷；未經臨床驗證，不得當作醫療器材或自動醫囑。**
 
@@ -25,7 +25,7 @@ https://yht5582-source.github.io/Transfusion-MSBOS-/
 - 每個檢驗各自追蹤時間與錨點，缺失不補成正常、零或本次實測。
 - 每項採樣後 4 U RBC 提醒重測；30 分鐘時效是可調工具假設。
 - 不自動推薦血品比例、袋數或生成處方；冷沉澱需由血庫換算 g。
-- 原術式表無法取回，因此 MSBOS 僅提供人工核定備血工作表及同術式品質計算，不虛構院內備血量。
+- 原術式表無法取回；v2.1 重建 68 項官方來源參考記錄（JHU 36、HTAA 32），支援搜尋／科別篩選／選取，與人工核定本院方案分開。來源原規格不換算台灣 RBC U。
 - 無姓名／病歷號欄位、遠端 API、分析追蹤、資料庫或自動儲存；教學資料全為合成。不輸入可識別病人資料。
 - 未做臨床效度驗證；院內使用前需血庫、麻醉、急診、醫師及輸血委員會審核。台灣仿單、給付及院內政策待核定。
 
@@ -42,9 +42,18 @@ https://yht5582-source.github.io/Transfusion-MSBOS-/
 
 ```
 python3 build.py
-node --test tests/core.test.cjs
+node --test tests/*.cjs
 ```
 
 `src/core.js`：純邏輯；`src/app.js`：操作；`src/template.html`：內容；`src/style.css`：版面。建置輸出 `index.html` 內嵌所有資源，可直接下載開啟。測試涵蓋不同情境閾值、缺失、無效輸入、時間、累積量、重測、錨定、模型停止條件及品質指標；軟體測試不代表臨床驗證。
 
 程式授權見 LICENSE；NBA 衍生臨床摘要歸屬見 NOTICE.md。
+
+## v2.1 術式表修正（2026-11-03）
+
+前版未載入術式資料，只提供自由填寫欄位。現新增 `src/msbos.js` 資料及純搜尋邏輯，顯示 68 項具來源之參考記錄。每項標示來源版本及段落／原文印刷頁碼；選取會填入術式名稱，清空前一術式的本院核定方案，避免誤套。沒有院內核定資料時不自動指定本院類別與數量。
+
+- [Johns Hopkins 成人表，原文更新 2025-04-08](https://anesthesiology.hopkinsmedicine.org/wp-content/uploads/2025/04/Blood-Order-Schedule-Adult-4-10-25.pdf)
+- [HTAA 第二版 2025](https://portal.appshtaa.moh.gov.my/images/ProfilJabatan/Transfusi/MSBOS_HTAA.pdf)
+
+兩者都是機構備血作業參考，不是全球通用指引。GSH 對照血型／抗體篩檢；No Sample 不表示永不需輸血。HTAA pint/pints/units 及 JHU U 皆保留原文，不代表台灣標準袋量；HTAA 頁碼為文件印刷頁碼，非 PDF 閱讀器頁序。
