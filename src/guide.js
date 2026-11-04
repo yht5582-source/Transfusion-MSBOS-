@@ -3,6 +3,8 @@ const Guide=(()=>{
 'use strict';
 const C=typeof Coag!=='undefined'?Coag:require('./core.js');
 const ok=v=>Number.isFinite(v);
+// PT and aPTT arrive in seconds with the mean normal of the same report (MNPT, MNAPTT).
+const ratio=(sec,mn)=>ok(sec)&&ok(mn)&&mn>0?sec/mn:null;
 const item=(key,name,status,title,dose,why,src,cautions=[])=>({key,name,status,title,dose,why,src,cautions});
 // VGHTPE 111-11-24: 1 U raises Hb about 0.5 g/dL in a 50-60 kg adult. Scaling by weight beyond that is a tool assumption.
 const hbRisePerU=w=>.5*55/Math.max(ok(w)?w:55,55);
@@ -24,12 +26,12 @@ if(p.pltFn&&p.state!=='stable')return item(...n,'consider','數量足夠但功�
 if(p.state==='major')return item(...n,'consider','未達參考值，依流程與報告調整','依本院 MTP 包組',`血小板 ${p.plt}，參考值 ${cut} ×10⁹/L。`,['NBA','AoA'],cautions);
 return item(...n,'no','目前不需','—',`血小板 ${p.plt} 未低於 ${cut} ×10⁹/L。數量不代表功能。`,src,cautions);}
 function ffp(p){const n=['ffp','新鮮冷凍血漿'],w=p.weight,mlLo=ok(w)?10*w:null,mlHi=ok(w)?20*w:null,dose=ok(w)?`${mlLo}–${mlHi} mL（10–20 mL/kg），約 ${Math.ceil(mlLo/110)}–${Math.ceil(mlHi/110)} U；每 U 以 110 mL 估，依袋標核對`:'10–20 mL/kg（請填體重）',src=['VGH','AoA'];
-const has=ok(p.inr)||ok(p.ptRatio)||ok(p.apttRatio),high=(ok(p.inr)&&p.inr>1.5)||(ok(p.ptRatio)&&p.ptRatio>1.5)||(ok(p.apttRatio)&&p.apttRatio>1.5);
-const cautions=[];if(p.liver)cautions.push('肝病：傳統凝血檢驗預測出血的能力有限，不要只為矯正數值而輸。');if(ok(p.inr)&&p.inr<=1.85)cautions.push('INR ≤1.85 時，FFP 不太可能明顯校正 INR。');if(p.taco)cautions.push('有循環超載風險：評估容量與速率。');
+const ptR=ratio(p.pt,p.mnpt),apttR=ratio(p.aptt,p.mnaptt),has=ok(p.inr)||ptR!==null||apttR!==null,high=(ok(p.inr)&&p.inr>1.5)||(ptR!==null&&ptR>1.5)||(apttR!==null&&apttR>1.5),noMn=[ok(p.pt)&&ptR===null?'MNPT':null,ok(p.aptt)&&apttR===null?'MNAPTT':null].filter(Boolean);
+const cautions=[];if(noMn.length)cautions.push(`有秒數但缺 ${noMn.join('、')}，該項未計入判斷。`);if(p.liver)cautions.push('肝病：傳統凝血檢驗預測出血的能力有限，不要只為矯正數值而輸。');if(ok(p.inr)&&p.inr<=1.85)cautions.push('INR ≤1.85 時，FFP 不太可能明顯校正 INR。');if(p.taco)cautions.push('有循環超載風險：評估容量與速率。');
 if(p.state==='major'&&!high)return item(...n,'give','依大量輸血流程','每 2 U RBC 至少配 1 U FFP；依本院 MTP','檢驗未回或未達閾值前依比例給予，再依結果調整。',['NBA'],cautions);
-if(!has)return need(n,'沒有 INR 或 PT／aPTT 倍數。');
-if(!high)return item(...n,'no','目前不需','—','INR 與 PT／aPTT 未超過 1.5 倍；FFP 不用於補充白蛋白或容量。',src,cautions);
-if(p.state!=='stable')return item(...n,'give','出血合併凝血延長',dose,'INR >1.5 或 PT／aPTT >1.5 倍合併出血。輸後重測再調整。',['VGH','AoA','EU'],cautions);
+if(!has)return need(n,noMn.length?`有秒數但缺 ${noMn.join('、')}，無法計算倍數。`:'沒有 INR，也沒有 PT、aPTT 秒數。');
+if(!high)return item(...n,'no','目前不需','—',`${ptR!==null?`PT ${ptR.toFixed(2)} 倍、`:''}${apttR!==null?`aPTT ${apttR.toFixed(2)} 倍、`:''}INR ${ok(p.inr)?p.inr:'未測'}，未超過 1.5；FFP 不用於補充白蛋白或容量。`,src,cautions);
+if(p.state!=='stable')return item(...n,'give','出血合併凝血延長',dose,`${ptR!==null?`PT ${ptR.toFixed(2)} 倍、`:''}${apttR!==null?`aPTT ${apttR.toFixed(2)} 倍、`:''}INR ${ok(p.inr)?p.inr:'未測'}，合併出血。輸後重測再調整。`,['VGH','AoA','EU'],cautions);
 if(p.invasive)return item(...n,'consider','將接受侵襲性處置',dose,'凝血因子缺乏且將接受侵襲性診療時可考慮。',['VGH'],cautions);
 return item(...n,'no','沒有出血或處置，不預防性輸注','—','數值異常本身不是輸注理由。請先查病因。',src,cautions);}
 function fib(p){const n=['fib','Fibrinogen 補充'],w=p.weight,uTw=ok(w)?2*Math.ceil(w/10):null,dose=(ok(w)?`冷凍沉澱品 ${uTw} U（每 10 kg 2 U）；每 U 含量 >75 mg，故至少約 ${(uTw*.075).toFixed(2)} g`:'冷凍沉澱品每 10 kg 2 U（請填體重）'),big=p.state==='stable'?'':'；出血指引的目標量為 3–4 g，需依血庫實際含量換算，濃縮製劑請確認院內供應';
@@ -50,8 +52,9 @@ if(p.remoteBank)adjust.push(rec.kind==='ts'?'血品無法快速取得：T&S 的�
 if(ok(p.hb)&&p.hb<10&&rec.kind==='ts')adjust.push(`術前 Hb ${p.hb} 偏低：考慮至少配血 2 U（1 袋）。北布里斯托對部分術式有類似加訂規則。`);
 if(ok(p.plt)&&p.plt<80)adjust.push(`血小板 ${p.plt}：Worcestershire 視為風險因子，不要減少備血。`);
 if((ok(p.inr)&&p.inr>1.5)||p.warfarin)adjust.push('凝血異常或使用 warfarin：術前先處理，並提高備血警覺。');
+if(row.en==='Total knee replacement'||row.en==='Total hip replacement')adjust.push('台灣單一中心 2022 年初次全關節置換 232 人僅 4 人受血（C:T 58:1，預印本），CKD 4–5 期較常受血；可作院內檢討參考。');
 if(p.redo)adjust.push('再次手術或預期沾黏：參考值可能偏低，由主刀與麻醉評估。');
 if(rec.spread>=2)adjust.push('各來源差異大，須依院內資料裁定。');
 const sources=C.schedSources.filter(k=>row[k]!==null).map(k=>({name:raw[k],value:row[k]}));return{kind:rec.kind,units:rec.units??null,label,n:rec.n,adjust,sources,zh:row.zh};}
-return{products,prep,platCut,hbRisePerU};})();
+return{products,prep,platCut,hbRisePerU,ratio};})();
 if(typeof module!=='undefined')module.exports=Guide;

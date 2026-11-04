@@ -2,7 +2,7 @@
 const Coag=(()=>{
 'use strict';
 const exposure=['rbc','rbcMl','ffp','plt','pc','pltMl','cryoU','cryoMl','cryst','colloid','loss','fibG'];
-const labs={hb:['Hb','g/dL',0,30],platelet:['Platelet','×10⁹/L',0,2000],fibrinogen:['Fibrinogen','g/L',0,20],pt:['PT','s',1,300],ptNormal:['PT 參考值','s',1,100],inr:['INR','',.1,30],aptt:['aPTT','s',1,500],apttNormal:['aPTT 參考值','s',1,200],ca:['Ionized Ca','mmol/L',0,3],ph:['pH','',6.5,7.8],be:['Base excess','mmol/L',-40,40],lactate:['Lactate','mmol/L',0,40],temp:['核心體溫','°C',25,43]};
+const labs={hb:['Hb','g/dL',0,30],platelet:['Platelet','×10⁹/L',0,2000],fibrinogen:['Fibrinogen','g/L',0,20],pt:['PT','s',1,300],ptNormal:['MNPT','s',1,100],inr:['INR','',.1,30],aptt:['aPTT','s',1,500],apttNormal:['MNAPTT','s',1,200],ca:['Ionized Ca','mmol/L',0,3],ph:['pH','',6.5,7.8],be:['Base excess','mmol/L',-40,40],lactate:['Lactate','mmol/L',0,40],temp:['核心體溫','°C',25,43]};
 const exposureNames={rbc:'RBC',rbcMl:'RBC 實際 mL',ffp:'FFP',plt:'分離術血小板',pc:'傳統血小板',pltMl:'血小板實際 mL',cryoU:'CRYO',cryoMl:'CRYO 實際 mL',cryst:'晶體液',colloid:'膠體液',loss:'失血',fibG:'補充 fibrinogen'};
 // Context reference values; TBI / spontaneous ICH 100 is stated by both European trauma R30 and Anaesthetists 2025.
 const cuts=c=>({fibrinogen:c.context==='nba'||c.context==='obstetric'?2:1.5,platelet:c.tbi?100:c.context==='obstetric'?75:50,inr:1.5,ca:c.context==='trauma'?1.1:1,ph:7.2,be:-6,lactate:4,temp:35});
@@ -22,7 +22,7 @@ for(const [k,limit,msg]of [['ca',cut.ca,'游離鈣低：複測、評估 citrate 
 for(const [k,bad,msg]of [['be',L.be&&L.be.value<cut.be,'代謝性酸中毒'],['lactate',L.lactate&&L.lactate.value>cut.lactate,'乳酸升高']])if(bad)add(k,`${labs[k][0]} ${L[k].value} mmol/L（${L[k].t} min 採樣）：${msg}，達 NBA 嚴重生理紊亂數值；評估灌流、休克與病因，不能只靠血品矯正。`,bleeding?'urgent':'review');
 const required=['platelet','fibrinogen','inr','aptt','ca','ph','temp'];const missing=required.filter(k=>!L[k]);if(missing.length)add('missing','資料不足／尚未測量：'+missing.map(k=>labs[k][0]).join('、')+'；不能當作正常。');
 for(const k of required){const l=L[k];if(!l)continue;if(Number.isFinite(c.stale)&&now-l.t>=c.stale)add('stale-'+k,`${labs[k][0]} 採樣距最新時間點（${now} min）${now-l.t} 分鐘：已達工具時效提醒，請核對是否重測。工具不讀取實際時鐘。`);if(last.rbc-l.row.rbc>=(c.repeatTwU??4))add('rbc-'+k,`${labs[k][0]} 採樣後已輸 ${last.rbc-l.row.rbc} 台灣 U RBC：考慮立即重測（工具提醒量；不是 NBA 海外 4 U 的換算）。`,bleeding?'urgent':'review');}
-for(const k of ['pt','aptt'])if(L[k]&&L[k].row[k+'Normal']==null)add('ref-'+k,labs[k][0]+' 缺同次參考值，無法計算倍數；不將秒數直接當比值。');
+for(const k of ['pt','aptt'])if(L[k]&&L[k].row[k+'Normal']==null)add('ref-'+k,labs[k][0]+` 缺同次 ${k==='pt'?'MNPT':'MNAPTT'}，無法計算倍數；不將秒數直接當比值。`);
 if(c.complex)add('complex','複雜病因：DIC、肝衰竭、抗凝血藥、ECMO/CPB、尿毒性血小板功能障礙等需病因評估及專科人工審核；停止數值情境外推。');
 if(last&&((last.rbc>0&&last.rbcMl<=0)||((last.plt>0||last.pc>0)&&last.pltMl<=0)))add('volume','台灣血品已記錄單位／袋數，但缺實際輸注 mL；相關機制模型可能停止，請依血袋標示補齊。');
 const vem=[...rows].reverse().find(r=>r.vem?.trim());if(vem)add('vem',`最近一筆 TEG/ROTEM 紀錄在 ${vem.t} min：`+'依同儀器、同試劑及院內演算法由受訓人員判讀；不套跨平台閾值。');

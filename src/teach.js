@@ -78,7 +78,7 @@ const MAP={root:'輸血與術前備血',branches:[
 {h:'3. 血小板',c:'#8c5c16',leaves:[{b:'預防',t:'<10；造血功能不足 <20',s:'VGH'},{b:'處置',t:'導管 20、腰穿 40、大手術 50、硬膜外 80、中樞神經 100',s:'AoA'},{b:'出血',t:'<50；產科 <75；腦、肺、眼或 TBI <100',s:'VGH'},{b:'劑量',t:'先 1 袋 PH（約 12 U PC），約升 20–40',s:'VGH'},{b:'慎用',t:'TTP、HIT、ITP',s:'VGH'}]},
 {h:'4. 血漿與反轉',c:'#3f6fa8',leaves:[{b:'適應症',t:'INR 或 PT／aPTT >1.5，且出血或將做侵襲性處置',s:'VGH'},{b:'劑量',t:'FFP 10–20 mL/kg',s:'VGH'},{b:'限制',t:'INR ≤1.85 難以校正；肝病不只看數值',s:'VGH'},{b:'Warfarin',t:'PCC 25–50 IU/kg 優先',s:'NBA'}]},
 {h:'5. Fibrinogen',c:'#5b6f2b',leaves:[{b:'適應症',t:'出血 <1.5、產科 <2.0、創傷 ≤1.5',s:'AoA'},{b:'台灣用量',t:'冷凍沉澱品每 10 kg 2 U，每 U >75 mg',s:'VGH'},{b:'指引目標',t:'3–4 g，依血庫實際含量換算',s:'NBA'},{b:'不要',t:'用 FFP 補低 fibrinogen',s:'EU'}]},
-{h:'6. 術前預備血',c:'#6a4f9c',leaves:[{b:'選術式',t:'不備血、T&S 或配血，8 份來源中位數',s:'Tool'},{b:'提高備血',t:'抗體、Hb <10、血品難取得、凝血異常',s:'Worcs'},{b:'品質回饋',t:'C:T ≤2.5、TP ≥30%、1.5 × TI 試算',s:'Mead'}]},
+{h:'6. 術前預備血',c:'#6a4f9c',leaves:[{b:'選術式',t:'不備血、T&S 或配血，8 份來源中位數',s:'Tool'},{b:'提高備血',t:'抗體、Hb <10、血品難取得、凝血異常',s:'Worcs'},{b:'品質回饋',t:'C:T ≤2–2.5、TP ≥30%、1.5 × TI 試算',s:'Mead'}]},
 {h:'7. 重測與限制',c:'#526c7b',leaves:[{b:'每次輸注後',t:'重測再決定，不一次補足',s:'Tool'},{b:'鈣與體溫',t:'iCa <1 或創傷 <1.1 要補；體溫維持 ≥35',s:'NBA'},{b:'模型停止',t:'缺實際 mL、PC 未核對、產科、複雜病因',s:'Tool'}]}]};
 return{SRC,CASES,QUIZ,MAP};})();
 if(typeof module!=='undefined')module.exports=TEACH;
